@@ -13,6 +13,8 @@ const INITIAL_SNIPPETS: Snippet[] = [
     content: 'let a : number = 5;\nlet b : number = 5;\n\nprintln(a + b);',
     compliance: 'pending',
     author: 'John Doe',
+    description: 'Mock snippet',
+    languageVersion: '1.1',
     language: 'printscript',
     extension: 'prs'
   },
@@ -22,6 +24,8 @@ const INITIAL_SNIPPETS: Snippet[] = [
     content: 'let a : number = 5;\nlet b : number = 5;\n\nprintln(a + b);',
     compliance: 'not-compliant',
     author: 'John Doe',
+    description: 'Mock snippet',
+    languageVersion: '1.1',
     language: 'printscript',
     extension: 'prs'
   },
@@ -31,6 +35,8 @@ const INITIAL_SNIPPETS: Snippet[] = [
     content: 'let a : number = 5;\nlet b : number = 5;\n\nprintln(a + b);',
     compliance: 'compliant',
     author: 'John Doe',
+    description: 'Mock snippet',
+    languageVersion: '1.1',
     language: 'printscript',
     extension: 'prs'
   }

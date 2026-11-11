@@ -23,6 +23,37 @@ export type UpdateSnippet = {
   content: string
 }
 
+export type UpdateSnippetFull = {
+  name: string;
+  description: string;
+  language: string;
+  languageVersion: string;
+  content: string;
+}
+
+export type SnippetFileData = {
+  name: string;
+  description: string;
+  language: string;
+  languageVersion: string;
+  file: File;
+  extension: string;
+}
+
+export type SnippetSortBy = 'name' | 'language' | 'valid'
+export type SortDirection = 'asc' | 'desc'
+export type SnippetDownloadVersion = 'original' | 'formatted'
+
+export type SnippetListParams = {
+  page: number;
+  pageSize: number;
+  name?: string;
+  language?: string;
+  valid?: boolean;
+  sortBy?: SnippetSortBy;
+  direction?: SortDirection;
+}
+
 export type Snippet = CreateSnippet & {
   id: string
 } & SnippetStatus

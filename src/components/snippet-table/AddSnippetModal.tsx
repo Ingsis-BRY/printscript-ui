@@ -21,13 +21,15 @@ import "prismjs/themes/prism-okaidia.css";
 import {Save} from "@mui/icons-material";
 import {CreateSnippet, CreateSnippetWithLang} from "../../utils/snippet.ts";
 import {ModalWrapper} from "../common/ModalWrapper.tsx";
-import {useCreateSnippet, useGetFileTypes} from "../../utils/queries.tsx";
+import {useCreateSnippet, useCreateSnippetFromFile, useGetFileTypes} from "../../utils/queries.tsx";
+import {useSnackbarContext} from "../../contexts/snackbarContext.tsx";
 import {queryClient} from "../../App.tsx";
 
-export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
+export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
     open: boolean,
     onClose: () => void,
-    defaultSnippet?: CreateSnippetWithLang
+    defaultSnippet?: CreateSnippetWithLang,
+    file?: File
 }) => {
     const [language, setLanguage] = useState(defaultSnippet?.language ?? "printscript");
     const [description, setDescription] = useState("");
@@ -37,19 +39,45 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
     const {mutateAsync: createSnippet, isLoading: loadingSnippet} = useCreateSnippet({
         onSuccess: () => queryClient.invalidateQueries('listSnippets')
     })
+    const {mutateAsync: createSnippetFromFile, isLoading: loadingUpload} = useCreateSnippetFromFile({
+        onSuccess: () => queryClient.invalidateQueries('listSnippets')
+    })
     const {data: fileTypes} = useGetFileTypes();
+    const {createSnackbar} = useSnackbarContext()
 
     const handleCreateSnippet = async () => {
+        const extension = fileTypes?.find((f) => f.language === language)?.extension ?? "prs"
+        try {
+            if (file) {
+                // Upload the original file, or the edited code if it was modified in the editor
+                const toUpload = code === defaultSnippet?.content ? file : new File([code], file.name, {type: "text/plain"})
+                await createSnippetFromFile({
+                    name: snippetName,
+                    description,
+                    language,
+                    languageVersion,
+                    file: toUpload,
+                    extension,
+                })
+            } else {
+                await createSnippet(buildSnippet(extension))
+            }
+            onClose();
+        } catch (e) {
+            createSnackbar('error', e instanceof Error ? e.message : 'Could not create snippet')
+        }
+    }
+
+    const buildSnippet = (extension: string): CreateSnippet => {
         const newSnippet: CreateSnippet = {
             name: snippetName,
             description,
             content: code,
             language: language,
             languageVersion,
-            extension: fileTypes?.find((f) => f.language === language)?.extension ?? "prs"
+            extension
         }
-        await createSnippet(newSnippet);
-        onClose();
+        return newSnippet
     }
 
     useEffect(() => {
@@ -74,12 +102,13 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
                         !code.trim() ||
                         !language ||
                         !languageVersion ||
-                        loadingSnippet
+                        loadingSnippet ||
+                        loadingUpload
                     } variant="contained"
                             disableRipple
                             sx={{boxShadow: 0}} onClick={handleCreateSnippet}>
                         <Box pr={1} display={"flex"} alignItems={"center"} justifyContent={"center"}>
-                            {loadingSnippet ? <CircularProgress size={24}/> : <Save/>}
+                            {loadingSnippet || loadingUpload ? <CircularProgress size={24}/> : <Save/>}
                         </Box>
                         Save Snippet
                     </Button>

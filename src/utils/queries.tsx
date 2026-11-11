@@ -1,8 +1,18 @@
+import {useMemo} from 'react';
 import {useMutation, UseMutationResult, useQuery} from 'react-query';
-import {CreateSnippet, PaginatedSnippets, Snippet, UpdateSnippet} from './snippet.ts';
+import {
+  CreateSnippet,
+  PaginatedSnippets,
+  Snippet,
+  SnippetDownloadVersion,
+  SnippetFileData,
+  SnippetListParams,
+  UpdateSnippet,
+  UpdateSnippetFull
+} from './snippet.ts';
 import {SnippetOperations} from "./snippetOperations.ts";
 import {PaginatedUsers} from "./users.ts";
-import {FakeSnippetOperations} from "./mock/fakeSnippetOperations.ts";
+import {createHybridSnippetOperations} from "./http/hybridSnippetOperations.ts";
 import {TestCase} from "../types/TestCase.ts";
 import {FileType} from "../types/FileType.ts";
 import {Rule} from "../types/Rule.ts";
@@ -21,15 +31,14 @@ export const useSnippetsOperations = () => {
   //         .catch(error => console.error(error));
   // });
 
-  const snippetOperations: SnippetOperations = new FakeSnippetOperations(/* getAccessTokenSilently */); // TODO: Replace with your implementation
-
-  return snippetOperations
+  // Snippet-service endpoints use the real backend; the rest is still mocked.
+  return useMemo<SnippetOperations>(() => createHybridSnippetOperations(), [])
 }
 
-export const useGetSnippets = (page: number = 0, pageSize: number = 10, snippetName?: string) => {
+export const useGetSnippets = (params: SnippetListParams) => {
   const snippetOperations = useSnippetsOperations()
 
-  return useQuery<PaginatedSnippets, Error>(['listSnippets', page,pageSize,snippetName], () => snippetOperations.listSnippetDescriptors(page, pageSize,snippetName));
+  return useQuery<PaginatedSnippets, Error>(['listSnippets', params], () => snippetOperations.listSnippetDescriptors(params), {keepPreviousData: true});
 };
 
 export const useGetSnippetById = (id: string) => {
@@ -56,6 +65,41 @@ export const useUpdateSnippetById = ({onSuccess}: {onSuccess: () => void}): UseM
       ({id, updateSnippet}) => snippetOperations.updateSnippetById(id, updateSnippet),{
         onSuccess,
     }
+  );
+};
+
+export const useUpdateSnippetFull = ({onSuccess}: {onSuccess: () => void}) => {
+  const snippetOperations = useSnippetsOperations()
+
+  return useMutation<Snippet, Error, { id: string; updateSnippet: UpdateSnippetFull }>(
+      ({id, updateSnippet}) => snippetOperations.updateSnippetFull(id, updateSnippet),
+      {onSuccess}
+  );
+};
+
+export const useCreateSnippetFromFile = ({onSuccess}: {onSuccess: () => void}) => {
+  const snippetOperations = useSnippetsOperations()
+
+  return useMutation<Snippet, Error, SnippetFileData>(
+      data => snippetOperations.createSnippetFromFile(data),
+      {onSuccess}
+  );
+};
+
+export const useUpdateSnippetFromFile = ({onSuccess}: {onSuccess: () => void}) => {
+  const snippetOperations = useSnippetsOperations()
+
+  return useMutation<Snippet, Error, { id: string; data: SnippetFileData }>(
+      ({id, data}) => snippetOperations.updateSnippetFromFile(id, data),
+      {onSuccess}
+  );
+};
+
+export const useDownloadSnippet = () => {
+  const snippetOperations = useSnippetsOperations()
+
+  return useMutation<Blob, Error, { id: string; version: SnippetDownloadVersion }>(
+      ({id, version}) => snippetOperations.downloadSnippet(id, version)
   );
 };
 

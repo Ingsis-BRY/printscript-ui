@@ -1,6 +1,14 @@
 import {SnippetOperations} from '../snippetOperations'
 import {FakeSnippetStore} from './fakeSnippetStore'
-import {CreateSnippet, PaginatedSnippets, Snippet, UpdateSnippet} from '../snippet'
+import {
+  CreateSnippet,
+  PaginatedSnippets,
+  Snippet,
+  SnippetFileData,
+  SnippetListParams,
+  UpdateSnippet,
+  UpdateSnippetFull
+} from '../snippet'
 import autoBind from 'auto-bind'
 import {PaginatedUsers} from "../users.ts";
 import {TestCase} from "../../types/TestCase.ts";
@@ -29,7 +37,7 @@ export class FakeSnippetOperations implements SnippetOperations {
     })
   }
 
-  listSnippetDescriptors(page: number,pageSize: number): Promise<PaginatedSnippets> {
+  listSnippetDescriptors({page, pageSize}: SnippetListParams): Promise<PaginatedSnippets> {
     const response: PaginatedSnippets = {
       page: page,
       page_size: pageSize,
@@ -46,6 +54,29 @@ export class FakeSnippetOperations implements SnippetOperations {
     return new Promise(resolve => {
       setTimeout(() => resolve(this.fakeStore.updateSnippet(id, updateSnippet)), DELAY)
     })
+  }
+
+  updateSnippetFull(id: string, updateSnippet: UpdateSnippetFull): Promise<Snippet> {
+    return this.updateSnippetById(id, {content: updateSnippet.content})
+  }
+
+  createSnippetFromFile(data: SnippetFileData): Promise<Snippet> {
+    return data.file.text().then(content => this.createSnippet({
+      name: data.name,
+      description: data.description,
+      language: data.language,
+      languageVersion: data.languageVersion,
+      extension: data.extension,
+      content
+    }))
+  }
+
+  updateSnippetFromFile(id: string, data: SnippetFileData): Promise<Snippet> {
+    return data.file.text().then(content => this.updateSnippetById(id, {content}))
+  }
+
+  downloadSnippet(id: string): Promise<Blob> {
+    return this.getSnippetById(id).then(snippet => new Blob([snippet?.content ?? ''], {type: 'text/plain'}))
   }
 
   getUserFriends(name: string = "", page: number = 1, pageSize: number = 10): Promise<PaginatedUsers> {

@@ -35,7 +35,7 @@ export const mapSnippetListItem = (
     languageVersion: snippet.languageVersion,
     extension: "",
     author: snippet.owner,
-    compliance: "pending",
+    compliance: snippet.valid ? "compliant" : "not-compliant",
 });
 
 export const mapGetSnippet = (

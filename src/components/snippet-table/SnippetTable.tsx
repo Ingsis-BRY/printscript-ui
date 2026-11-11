@@ -5,19 +5,21 @@ import {
   InputBase,
   Menu,
   MenuItem,
+  Select,
   styled,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TablePagination,
-  TableRow
+  TableRow,
+  TableSortLabel
 } from "@mui/material";
 import {AddSnippetModal} from "./AddSnippetModal.tsx";
 import {useRef, useState} from "react";
 import {Add, Search} from "@mui/icons-material";
 import {LoadingSnippetRow, SnippetRow} from "./SnippetRow.tsx";
-import {CreateSnippetWithLang, getFileLanguage, Snippet} from "../../utils/snippet.ts";
+import {CreateSnippetWithLang, getFileLanguage, Snippet, SnippetSortBy, SortDirection} from "../../utils/snippet.ts";
 import {usePaginationContext} from "../../contexts/paginationContext.tsx";
 import {useSnackbarContext} from "../../contexts/snackbarContext.tsx";
 import {useGetFileTypes} from "../../utils/queries.tsx";
@@ -27,13 +29,19 @@ type SnippetTableProps = {
   snippets?: Snippet[];
   loading: boolean;
   handleSearchSnippet: (snippetName: string) => void;
+  language: string;
+  onLanguageChange: (language: string) => void;
+  sortBy: SnippetSortBy;
+  direction: SortDirection;
+  onSort: (field: SnippetSortBy) => void;
 }
 
 export const SnippetTable = (props: SnippetTableProps) => {
-  const {snippets, handleClickSnippet, loading,handleSearchSnippet} = props;
+  const {snippets, handleClickSnippet, loading, handleSearchSnippet, language, onLanguageChange, sortBy, direction, onSort} = props;
   const [addModalOpened, setAddModalOpened] = useState(false);
   const [popoverMenuOpened, setPopoverMenuOpened] = useState(false)
   const [snippet, setSnippet] = useState<CreateSnippetWithLang | undefined>()
+  const [snippetFile, setSnippetFile] = useState<File | undefined>()
 
   const popoverRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,9 +63,12 @@ export const SnippetTable = (props: SnippetTableProps) => {
       return
     }
     file.text().then((text) => {
+      setSnippetFile(file)
       setSnippet({
         name: splitName[0],
         content: text,
+        description: "",
+        languageVersion: "",
         language: fileType.language,
         extension: fileType.extension
       })
@@ -75,7 +86,7 @@ export const SnippetTable = (props: SnippetTableProps) => {
 
   return (
       <>
-        <Box display="flex" flexDirection="row" justifyContent="space-between">
+        <Box display="flex" flexDirection="row" justifyContent="space-between" gap={2}>
           <Box sx={{background: 'white', width: '30%', display: 'flex'}}>
             <InputBase
                 sx={{ml: 1, flex: 1}}
@@ -87,6 +98,12 @@ export const SnippetTable = (props: SnippetTableProps) => {
               <Search/>
             </IconButton>
           </Box>
+          <Select size="small" displayEmpty sx={{background: 'white', minWidth: 160}}
+                  value={language} onChange={e => onLanguageChange(e.target.value)}
+                  inputProps={{'aria-label': 'language filter'}}>
+            <MenuItem value="">All languages</MenuItem>
+            {fileTypes?.map(x => <MenuItem key={x.language} value={x.language}>{x.language}</MenuItem>)}
+          </Select>
           <Button ref={popoverRef} variant="contained" disableRipple sx={{boxShadow: 0}}
                   onClick={() => setPopoverMenuOpened(true)}>
             <Add/>
@@ -96,10 +113,16 @@ export const SnippetTable = (props: SnippetTableProps) => {
         <Table size="medium" sx={{borderSpacing: "0 10px", borderCollapse: "separate"}}>
           <TableHead>
             <TableRow sx={{fontWeight: 'bold'}}>
-              <StyledTableCell sx={{fontWeight: "bold"}}>Name</StyledTableCell>
-              <StyledTableCell sx={{fontWeight: "bold"}}>Language</StyledTableCell>
+              <StyledTableCell sx={{fontWeight: "bold"}}>
+                <TableSortLabel active={sortBy === 'name'} direction={direction} onClick={() => onSort('name')}>Name</TableSortLabel>
+              </StyledTableCell>
+              <StyledTableCell sx={{fontWeight: "bold"}}>
+                <TableSortLabel active={sortBy === 'language'} direction={direction} onClick={() => onSort('language')}>Language</TableSortLabel>
+              </StyledTableCell>
               <StyledTableCell sx={{fontWeight: "bold"}}>Author</StyledTableCell>
-              <StyledTableCell sx={{fontWeight: "bold"}}>Conformance</StyledTableCell>
+              <StyledTableCell sx={{fontWeight: "bold"}}>
+                <TableSortLabel active={sortBy === 'valid'} direction={direction} onClick={() => onSort('valid')}>Conformance</TableSortLabel>
+              </StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>{
@@ -125,10 +148,18 @@ export const SnippetTable = (props: SnippetTableProps) => {
                            onPageChange={(_, page) => handleGoToPage(page)}
                            onRowsPerPageChange={e => handleChangePageSize(Number(e.target.value))}/>
         </Table>
-        <AddSnippetModal defaultSnippet={snippet} open={addModalOpened}
-                         onClose={() => setAddModalOpened(false)}/>
+        <AddSnippetModal defaultSnippet={snippet} file={snippetFile} open={addModalOpened}
+                         onClose={() => {
+                           setAddModalOpened(false)
+                           setSnippet(undefined)
+                           setSnippetFile(undefined)
+                         }}/>
         <Menu anchorEl={popoverRef.current} open={popoverMenuOpened} onClick={handleClickMenu}>
-          <MenuItem onClick={() => setAddModalOpened(true)}>Create snippet</MenuItem>
+          <MenuItem onClick={() => {
+            setSnippet(undefined)
+            setSnippetFile(undefined)
+            setAddModalOpened(true)
+          }}>Create snippet</MenuItem>
           <MenuItem onClick={() => inputRef?.current?.click()}>Load snippet from file</MenuItem>
         </Menu>
         <input hidden type={"file"} ref={inputRef} multiple={false} data-testid={"upload-file-input"}
