@@ -48,4 +48,11 @@ export type BackendUpdateSnippet = {
 
 export type BackendCreateSnippet = {
     id: string;
+    name: string;
+    description: string;
+    language: string;
+    languageVersion: string;
+    owner: string;
+    versionNumber: number;
+    content: string;
 };

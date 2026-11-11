@@ -1,4 +1,5 @@
 import {
+    BackendCreateSnippet,
     BackendGetSnippet,
     BackendPage,
     BackendSnippetListItem,
@@ -6,6 +7,22 @@ import {
 } from "./backendSnippet";
 
 import { Snippet, PaginatedSnippets } from "../snippet";
+
+export const mapCreateSnippet = (
+    snippet: BackendCreateSnippet,
+    extension: string
+): Snippet => ({
+    id: snippet.id,
+    name: snippet.name,
+    description: snippet.description,
+    content: snippet.content,
+    language: snippet.language,
+    languageVersion: snippet.languageVersion,
+    extension,
+    author: snippet.owner,
+    compliance: "pending",
+});
+
 
 export const mapSnippetListItem = (
     snippet: BackendSnippetListItem

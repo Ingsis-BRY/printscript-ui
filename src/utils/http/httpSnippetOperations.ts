@@ -1,6 +1,7 @@
 import { httpClient } from "./httpClient";
 
 import {
+    BackendCreateSnippet,
     BackendGetSnippet,
     BackendPage,
     BackendSnippetListItem,
@@ -8,18 +9,36 @@ import {
 } from "./backendSnippet";
 
 import {
+    mapCreateSnippet,
     mapGetSnippet,
     mapPaginatedSnippets,
     mapUpdateSnippet,
 } from "./snippetMapper";
 
 import {
+    CreateSnippet,
     Snippet,
     PaginatedSnippets,
     UpdateSnippet,
 } from "../snippet";
 
 export class HttpSnippetOperations {
+
+    async createSnippet(createSnippet: CreateSnippet): Promise<Snippet> {
+
+        const response = await httpClient.post<BackendCreateSnippet>(
+            "/snippets",
+            {
+                name: createSnippet.name,
+                description: createSnippet.description,
+                language: createSnippet.language,
+                languageVersion: createSnippet.languageVersion,
+                content: createSnippet.content,
+            }
+        );
+
+        return mapCreateSnippet(response.data, createSnippet.extension);
+    }
 
     async listSnippetDescriptors(
         page: number,
