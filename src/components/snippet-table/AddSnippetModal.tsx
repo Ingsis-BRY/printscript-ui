@@ -8,6 +8,7 @@ import {
     MenuItem,
     Select,
     SelectChangeEvent,
+    TextField,
     Typography
 } from "@mui/material";
 import {highlight, languages} from "prismjs";
@@ -29,6 +30,8 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
     defaultSnippet?: CreateSnippetWithLang
 }) => {
     const [language, setLanguage] = useState(defaultSnippet?.language ?? "printscript");
+    const [description, setDescription] = useState("");
+    const [languageVersion, setLanguageVersion] = useState("");
     const [code, setCode] = useState(defaultSnippet?.content ?? "");
     const [snippetName, setSnippetName] = useState(defaultSnippet?.name ?? "")
     const {mutateAsync: createSnippet, isLoading: loadingSnippet} = useCreateSnippet({
@@ -39,8 +42,10 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
     const handleCreateSnippet = async () => {
         const newSnippet: CreateSnippet = {
             name: snippetName,
+            description,
             content: code,
             language: language,
+            languageVersion,
             extension: fileTypes?.find((f) => f.language === language)?.extension ?? "prs"
         }
         await createSnippet(newSnippet);
@@ -63,7 +68,14 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
                                 sx={{display: 'flex', alignItems: 'center'}}>
                         Add Snippet
                     </Typography>
-                    <Button disabled={!snippetName || !code || !language || loadingSnippet} variant="contained"
+                    <Button disabled={
+                        !snippetName.trim() ||
+                        !description.trim() ||
+                        !code.trim() ||
+                        !language ||
+                        !languageVersion ||
+                        loadingSnippet
+                    } variant="contained"
                             disableRipple
                             sx={{boxShadow: 0}} onClick={handleCreateSnippet}>
                         <Box pr={1} display={"flex"} alignItems={"center"} justifyContent={"center"}>
@@ -87,13 +99,13 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
                 flexDirection: 'column',
                 gap: '16px'
             }}>
-                <InputLabel htmlFor="name">Language</InputLabel>
+                <InputLabel id="language-label">Language</InputLabel>
                 <Select
-                    labelId="demo-simple-select-label"
+                    labelId="language-label"
                     id="demo-simple-select"
                     value={language}
-                    label="Age"
-                    onChange={(e: SelectChangeEvent<string>) => setLanguage(e.target.value)}
+                    label="Language"
+                    onChange={(e: SelectChangeEvent) => setLanguage(e.target.value)}
                     sx={{width: '50%'}}
                 >
                     {
@@ -102,6 +114,26 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet}: {
                                       value={x.language}>{capitalize((x.language))}</MenuItem>
                         ))
                     }
+                </Select>
+                <TextField
+                    label="Description"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    multiline
+                    rows={3}
+                    fullWidth
+                />
+                <InputLabel id="language-version-label">Language Version</InputLabel>
+                <Select
+                    labelId="language-version-label"
+                    id="language-version"
+                    value={languageVersion}
+                    onChange={(e: SelectChangeEvent) => setLanguageVersion(e.target.value)}
+                    sx={{width: '50%'}}
+                >
+                    <MenuItem value="VERSION_CONFIRMADA">
+                        VERSION_CONFIRMADA
+                    </MenuItem>
                 </Select>
             </Box>
             <InputLabel>Code Snippet</InputLabel>
