@@ -1,10 +1,17 @@
 import axios from "axios";
+import {getCurrentUserId} from "../devUser.ts";
 
 export const httpClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL,
     headers: {
         Accept: "application/json",
     },
+});
+
+// Until Auth0 is integrated the backend identifies the caller by this header.
+httpClient.interceptors.request.use((config) => {
+    config.headers.set("X-User-Id", getCurrentUserId());
+    return config;
 });
 
 // The backend returns errors as RFC 7807 ProblemDetail; surface its `detail`

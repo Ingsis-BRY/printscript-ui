@@ -139,6 +139,17 @@ export class HttpSnippetOperations {
         return mapUpdateSnippet(response.data);
     }
 
+    async shareSnippet(snippetId: string, userId: string): Promise<Snippet> {
+
+        await httpClient.post(`/snippets/${snippetId}/share`, {targetUserId: userId});
+
+        const snippet = await this.getSnippetById(snippetId);
+        if (!snippet) {
+            throw new Error(`Snippet ${snippetId} not found`);
+        }
+        return snippet;
+    }
+
     async deleteSnippet(id: string): Promise<string> {
 
         await httpClient.delete(`/snippets/${id}`);
