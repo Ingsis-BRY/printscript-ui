@@ -118,7 +118,13 @@ export const SnippetDetail = (props: SnippetDetailProps) => {
 
 
   async function handleShareSnippet(userId: string) {
-    shareSnippet({snippetId: id, userId})
+    shareSnippet({snippetId: id, userId}, {
+      onSuccess: () => {
+        setShareModalOppened(false)
+        createSnackbar('success', 'Snippet shared')
+      },
+      onError: (e) => createSnackbar('error', e.message)
+    })
   }
 
   return (

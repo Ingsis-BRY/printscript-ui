@@ -55,6 +55,15 @@ To start cypress, make sure that the UI is running and enter:
 npm run cypress
 ```
 
+## Temporary user (until Auth0)
+
+The backend identifies the caller with the `X-User-Id` header, which `httpClient` adds to every request.
+The user is picked with the **User** selector in the navbar and remembered in `localStorage`; the list
+lives in [devUser.ts](src/utils/devUser.ts). `VITE_DEV_USER_ID` sets the default user.
+
+Sharing a snippet uses the real backend (`POST /snippets/{id}/share`). The user search in the share modal
+lists the other dev users until the Auth0 user search exists.
+
 ## Enable Auth0
 
 This application uses https://www.npmjs.com/package/@auth0/auth0-react library for Auth0 integration, to enable it you need to change:
