@@ -16,21 +16,9 @@ import {createHybridSnippetOperations} from "./http/hybridSnippetOperations.ts";
 import {TestCase} from "../types/TestCase.ts";
 import {FileType} from "../types/FileType.ts";
 import {Rule} from "../types/Rule.ts";
-// import {useAuth0} from "@auth0/auth0-react";
-// import {useEffect} from "react";
 
 
 export const useSnippetsOperations = () => {
-  // const {getAccessTokenSilently} = useAuth0()
-  //
-  // useEffect(() => {
-  //     getAccessTokenSilently()
-  //         .then(token => {
-  //             console.log(token)
-  //         })
-  //         .catch(error => console.error(error));
-  // });
-
   // Snippet-service endpoints use the real backend; the rest is still mocked.
   return useMemo<SnippetOperations>(() => createHybridSnippetOperations(), [])
 }

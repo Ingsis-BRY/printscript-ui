@@ -1,8 +1,8 @@
-import {AppBar, Box, Button, Container, MenuItem, TextField, Toolbar, Typography} from "@mui/material";
+import {AppBar, Box, Button, Container, Toolbar, Typography} from "@mui/material";
 import {Code, Rule} from "@mui/icons-material";
 import {ReactNode} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
-import {DEV_USERS, getCurrentUserId, setCurrentUserId} from "../../utils/devUser.ts";
+import {useAuth0} from "@auth0/auth0-react";
 
 type PageType = {
     title: string;
@@ -23,6 +23,7 @@ const pages: PageType[] = [{
 export const Navbar = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const {user, logout} = useAuth0();
     return (
         <AppBar position="static" elevation={0}>
             <Container maxWidth="xl">
@@ -62,26 +63,13 @@ export const Navbar = () => {
                             </Button>
                         ))}
                     </Box>
-                    <TextField
-                        select
-                        size="small"
-                        label="User"
-                        value={getCurrentUserId()}
-                        onChange={(event) => {
-                            setCurrentUserId(event.target.value)
-                            // Every cached query belongs to the previous user.
-                            window.location.reload()
-                        }}
-                        sx={{
-                            minWidth: 140,
-                            "& .MuiInputBase-root, & .MuiInputLabel-root, & .MuiSvgIcon-root": {color: "white"},
-                            "& .MuiOutlinedInput-notchedOutline": {borderColor: "rgba(255,255,255,0.5)"},
-                        }}
+                    <Typography noWrap>{user?.name ?? user?.email}</Typography>
+                    <Button
+                        onClick={() => logout({logoutParams: {returnTo: window.location.origin}})}
+                        sx={{color: 'white', "&:hover": {backgroundColor: 'primary.dark'}}}
                     >
-                        {DEV_USERS.map((user) => (
-                            <MenuItem key={user.id} value={user.id}>{user.name}</MenuItem>
-                        ))}
-                    </TextField>
+                        Logout
+                    </Button>
                 </Toolbar>
             </Container>
         </AppBar>
