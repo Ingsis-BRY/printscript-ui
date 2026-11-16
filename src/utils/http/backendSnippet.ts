@@ -56,3 +56,10 @@ export type BackendCreateSnippet = {
     versionNumber: number;
     content: string;
 };
+
+export type BackendUserPage = {
+    users: { id: string; name: string }[];
+    page: number;
+    size: number;
+    total: number;
+};

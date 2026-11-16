@@ -1,5 +1,5 @@
 import axios from "axios";
-import {getCurrentUserId} from "../devUser.ts";
+import {getAccessToken} from "./accessToken.ts";
 
 export const httpClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -8,9 +8,11 @@ export const httpClient = axios.create({
     },
 });
 
-// Until Auth0 is integrated the backend identifies the caller by this header.
-httpClient.interceptors.request.use((config) => {
-    config.headers.set("X-User-Id", getCurrentUserId());
+httpClient.interceptors.request.use(async (config) => {
+    const token = await getAccessToken();
+    if (token) {
+        config.headers.set("Authorization", `Bearer ${token}`);
+    }
     return config;
 });
 

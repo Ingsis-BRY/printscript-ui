@@ -55,29 +55,41 @@ To start cypress, make sure that the UI is running and enter:
 npm run cypress
 ```
 
-## Temporary user (until Auth0)
+## Authentication (Auth0)
 
-The backend identifies the caller with the `X-User-Id` header, which `httpClient` adds to every request.
-The user is picked with the **User** selector in the navbar and remembered in `localStorage`; the list
-lives in [devUser.ts](src/utils/devUser.ts). `VITE_DEV_USER_ID` sets the default user.
+The app requires login: `withAuthenticationRequired` sends anyone who isn't logged in to the Auth0 login
+page (Authorization Code + PKCE). `httpClient` adds the access token to every request as
+`Authorization: Bearer <token>`, and the navbar shows the user with a **Logout** button.
 
-Sharing a snippet uses the real backend (`POST /snippets/{id}/share`). The user search in the share modal
-lists the other dev users until the Auth0 user search exists.
+The token is requested for the API `VITE_AUTH0_AUDIENCE` with the scopes `read:snippets write:snippets`.
+The user only gets them if they have the role `snippet-user` in Auth0; without it every request is `403`.
+Tokens are kept in `localStorage`, so a reload doesn't log the user out.
 
-## Enable Auth0
+Sharing (`POST /snippets/{id}/share`) and the user search of the share modal (`GET /users?name=`) use the
+backend. Tests, rules and formatting are still mocked.
 
-This application uses https://www.npmjs.com/package/@auth0/auth0-react library for Auth0 integration, to enable it you need to change:
-* Uncomment autologin in [App.tsx](src/App.tsx)
-* Uncomment token retrieval for operations [queries.tsx](src/utils/queries.tsx) 
-* Create a `.env` file with the required env vars:
+### Local development
+
+Create `.env.local` (gitignored):
+
 ```
-VITE_AUTH0_DOMAIN=<domain>
-VITE_AUTH0_CLIENT_ID=<client_id>
+VITE_AUTH0_DOMAIN=snippet-searcher-bry.us.auth0.com
+VITE_AUTH0_CLIENT_ID=<client id of the "Snippet Searcher UI" application>
+VITE_AUTH0_AUDIENCE=https://snippet-searcher-api
+VITE_API_BASE_URL=/api
 ```
 
-If you get 401 loop when getting token:
-* Change application type in Auth0 to "Regular Web Application"
-* In Application Settings > Credentials > "Authentication Method" select "None" 
+`npm run dev` proxies `/api` to `VITE_API_PROXY_TARGET` (default `http://localhost:8080`, snippet-service),
+the same way nginx does in the stack, so the browser never makes a cross-origin call.
+
+`http://localhost:5173` and `https://localhost` must be in the Allowed Callback URLs, Allowed Logout URLs
+and Allowed Web Origins of the Auth0 application.
+
+### Build
+
+The Vite variables are baked into the bundle at build time. The publish workflow passes them from the
+repository variables `VITE_API_BASE_URL`, `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` and
+`VITE_AUTH0_AUDIENCE`. None of them is a secret: they end up in the JavaScript the browser downloads.
 
 ## Start working
 

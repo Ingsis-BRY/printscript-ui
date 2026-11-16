@@ -6,6 +6,7 @@ import {
     BackendPage,
     BackendSnippetListItem,
     BackendUpdateSnippet,
+    BackendUserPage,
 } from "./backendSnippet";
 
 import {
@@ -25,6 +26,7 @@ import {
     UpdateSnippet,
     UpdateSnippetFull,
 } from "../snippet";
+import {PaginatedUsers} from "../users";
 
 const toFormData = (data: SnippetFileData): FormData => {
     const form = new FormData();
@@ -137,6 +139,20 @@ export class HttpSnippetOperations {
         );
 
         return mapUpdateSnippet(response.data);
+    }
+
+    async getUserFriends(name: string = "", page: number = 1, pageSize: number = 10): Promise<PaginatedUsers> {
+
+        const response = await httpClient.get<BackendUserPage>("/users", {
+            params: {name, page: Math.max(page - 1, 0), size: pageSize},
+        });
+
+        return {
+            page,
+            page_size: response.data.size,
+            count: response.data.total,
+            users: response.data.users,
+        };
     }
 
     async shareSnippet(snippetId: string, userId: string): Promise<Snippet> {
