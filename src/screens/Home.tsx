@@ -5,7 +5,7 @@ import {useEffect, useState} from "react";
 import {SnippetDetail} from "./SnippetDetail.tsx";
 import {Drawer} from "@mui/material";
 import {useGetSnippets} from "../utils/queries.tsx";
-import {SnippetSortBy, SortDirection} from "../utils/snippet.ts";
+import {SnippetRelationship, SnippetSortBy, SortDirection} from "../utils/snippet.ts";
 import {usePaginationContext} from "../contexts/paginationContext.tsx";
 import useDebounce from "../hooks/useDebounce.ts";
 
@@ -17,6 +17,8 @@ const HomeScreen = () => {
   const [language, setLanguage] = useState('');
   const [sortBy, setSortBy] = useState<SnippetSortBy>('name');
   const [direction, setDirection] = useState<SortDirection>('asc');
+  const [relationship, setRelationship] = useState<SnippetRelationship>('all');
+  const [validity, setValidity] = useState<'' | 'true' | 'false'>('');
   const {page, page_size, count, handleChangeCount, handleGoToPage} = usePaginationContext()
   const {data, isLoading} = useGetSnippets({
     page,
@@ -24,7 +26,9 @@ const HomeScreen = () => {
     name: snippetName,
     language: language || undefined,
     sortBy,
-    direction
+    direction,
+    relationship,
+    valid: validity === '' ? undefined : validity === 'true'
   })
 
   useEffect(() => {
@@ -64,6 +68,16 @@ const HomeScreen = () => {
     handleGoToPage(0)
   }
 
+  const handleRelationship = (value: SnippetRelationship) => {
+    setRelationship(value)
+    handleGoToPage(0)
+  }
+
+  const handleValidity = (value: '' | 'true' | 'false') => {
+    setValidity(value)
+    handleGoToPage(0)
+  }
+
   const handleLanguageFilter = (value: string) => {
     setLanguage(value)
     handleGoToPage(0)
@@ -75,7 +89,9 @@ const HomeScreen = () => {
         <SnippetTable loading={isLoading} handleClickSnippet={setSnippetId} snippets={data?.snippets}
                       handleSearchSnippet={handleSearchSnippet}
                       language={language} onLanguageChange={handleLanguageFilter}
-                      sortBy={sortBy} direction={direction} onSort={handleSort}/>
+                      sortBy={sortBy} direction={direction} onSort={handleSort}
+                      relationship={relationship} onRelationshipChange={handleRelationship}
+                      validity={validity} onValidityChange={handleValidity}/>
         <Drawer open={!!snippetId} anchor={"right"} onClose={handleCloseModal}>
           {snippetId && <SnippetDetail handleCloseModal={handleCloseModal} id={snippetId}/>}
         </Drawer>

@@ -1,3 +1,8 @@
 body {
   background-color: #f4f2ee;
 }
+
+.code-error-line {
+  background: rgba(255, 0, 0, .35);
+  text-decoration: underline wavy red;
+}

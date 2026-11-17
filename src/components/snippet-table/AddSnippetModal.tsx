@@ -1,4 +1,5 @@
 import {
+    Alert,
     Box,
     Button,
     capitalize,
@@ -11,12 +12,9 @@ import {
     TextField,
     Typography
 } from "@mui/material";
-import {highlight, languages} from "prismjs";
 import {useEffect, useState} from "react";
 import Editor from "react-simple-code-editor";
 
-import "prismjs/components/prism-clike";
-import "prismjs/components/prism-javascript";
 import "prismjs/themes/prism-okaidia.css";
 import {Save} from "@mui/icons-material";
 import {CreateSnippet, CreateSnippetWithLang} from "../../utils/snippet.ts";
@@ -24,6 +22,8 @@ import {ModalWrapper} from "../common/ModalWrapper.tsx";
 import {useCreateSnippet, useCreateSnippetFromFile, useGetFileTypes} from "../../utils/queries.tsx";
 import {useSnackbarContext} from "../../contexts/snackbarContext.tsx";
 import {queryClient} from "../../App.tsx";
+import {highlightCode} from "../../utils/editorHighlight.ts";
+import {describeError, getErrorSpan} from "../../utils/http/problem.ts";
 
 export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
     open: boolean,
@@ -36,6 +36,8 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
     const [languageVersion, setLanguageVersion] = useState("");
     const [code, setCode] = useState(defaultSnippet?.content ?? "");
     const [snippetName, setSnippetName] = useState(defaultSnippet?.name ?? "")
+    const [errorLine, setErrorLine] = useState<number | undefined>()
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const {mutateAsync: createSnippet, isLoading: loadingSnippet} = useCreateSnippet({
         onSuccess: () => queryClient.invalidateQueries('listSnippets')
     })
@@ -44,9 +46,16 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
     })
     const {data: fileTypes} = useGetFileTypes();
     const {createSnackbar} = useSnackbarContext()
+    const versions = fileTypes?.find(f => f.language === language)?.versions ?? []
+
+    const clearError = () => {
+        setErrorLine(undefined)
+        setErrorMessage(null)
+    }
 
     const handleCreateSnippet = async () => {
         const extension = fileTypes?.find((f) => f.language === language)?.extension ?? "prs"
+        clearError()
         try {
             if (file) {
                 // Upload the original file, or the edited code if it was modified in the editor
@@ -64,7 +73,10 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
             }
             onClose();
         } catch (e) {
-            createSnackbar('error', e instanceof Error ? e.message : 'Could not create snippet')
+            const message = describeError(e, 'Could not create snippet')
+            setErrorLine(getErrorSpan(e)?.start.line)
+            setErrorMessage(message)
+            createSnackbar('error', message)
         }
     }
 
@@ -79,6 +91,13 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
         }
         return newSnippet
     }
+
+    // Preselect the newest version of the chosen language
+    useEffect(() => {
+        if (!open) return
+        const available = fileTypes?.find(f => f.language === language)?.versions ?? []
+        setLanguageVersion(available.at(-1) ?? "")
+    }, [language, fileTypes, open]);
 
     useEffect(() => {
         if (defaultSnippet) {
@@ -104,7 +123,7 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
                         !languageVersion ||
                         loadingSnippet ||
                         loadingUpload
-                    } variant="contained"
+                    } variant="contained" data-testid="save-snippet-button"
                             disableRipple
                             sx={{boxShadow: 0}} onClick={handleCreateSnippet}>
                         <Box pr={1} display={"flex"} alignItems={"center"} justifyContent={"center"}>
@@ -135,6 +154,7 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
                     value={language}
                     label="Language"
                     onChange={(e: SelectChangeEvent) => setLanguage(e.target.value)}
+                    SelectDisplayProps={{'data-testid': 'language-select'} as object}
                     sx={{width: '50%'}}
                 >
                     {
@@ -148,6 +168,7 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
                     label="Description"
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
+                    inputProps={{'data-testid': 'description-input'}}
                     multiline
                     rows={3}
                     fullWidth
@@ -158,11 +179,10 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
                     id="language-version"
                     value={languageVersion}
                     onChange={(e: SelectChangeEvent) => setLanguageVersion(e.target.value)}
+                    SelectDisplayProps={{'data-testid': 'version-select'} as object}
                     sx={{width: '50%'}}
                 >
-                    <MenuItem value="VERSION_CONFIRMADA">
-                        VERSION_CONFIRMADA
-                    </MenuItem>
+                    {versions.map(v => <MenuItem key={v} value={v} data-testid={`version-option-${v}`}>{v}</MenuItem>)}
                 </Select>
             </Box>
             <InputLabel>Code Snippet</InputLabel>
@@ -173,8 +193,12 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
                     value={code}
                     padding={10}
                     data-testid={"add-snippet-code-editor"}
-                    onValueChange={(code) => setCode(code)}
-                    highlight={(code) => highlight(code, languages.js, 'javascript')}
+                    textareaId="add-snippet-editor"
+                    onValueChange={(code) => {
+                        setCode(code)
+                        clearError()
+                    }}
+                    highlight={(code) => highlightCode(code, errorLine)}
                     style={{
                         borderRadius: "8px",
                         overflow: "auto",
@@ -186,6 +210,7 @@ export const AddSnippetModal = ({open, onClose, defaultSnippet, file}: {
                     }}
                 />
             </Box>
+            {errorMessage && <Alert severity="error" data-testid="add-snippet-error">{errorMessage}</Alert>}
         </ModalWrapper>
     )
 }

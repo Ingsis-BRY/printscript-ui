@@ -1,5 +1,6 @@
 import axios from "axios";
 import {getAccessToken} from "./accessToken.ts";
+import type {Problem} from "./problem.ts";
 
 export const httpClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -30,7 +31,10 @@ httpClient.interceptors.response.use(
                     data = undefined;
                 }
             }
-            const problem = data as { detail?: string; title?: string } | undefined;
+            const problem = (data && typeof data === "object" ? data : undefined) as Problem | undefined;
+            if (problem) {
+                (error as { problem?: Problem }).problem = problem;
+            }
             const message = problem?.detail ?? problem?.title;
             if (message) {
                 error.message = message;

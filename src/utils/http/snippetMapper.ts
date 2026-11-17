@@ -1,12 +1,18 @@
 import {
     BackendCreateSnippet,
     BackendGetSnippet,
+    BackendLanguage,
     BackendPage,
+    BackendRule,
     BackendSnippetListItem,
+    BackendTestCase,
     BackendUpdateSnippet,
 } from "./backendSnippet";
 
-import { Snippet, PaginatedSnippets } from "../snippet";
+import {PaginatedSnippets, Snippet} from "../snippet";
+import {FileType} from "../../types/FileType";
+import {Rule} from "../../types/Rule";
+import {TestCase} from "../../types/TestCase";
 
 export const mapCreateSnippet = (
     snippet: BackendCreateSnippet,
@@ -20,9 +26,9 @@ export const mapCreateSnippet = (
     languageVersion: snippet.languageVersion,
     extension,
     author: snippet.owner,
+    authorId: snippet.owner,
     compliance: "pending",
 });
-
 
 export const mapSnippetListItem = (
     snippet: BackendSnippetListItem
@@ -34,8 +40,10 @@ export const mapSnippetListItem = (
     language: snippet.language,
     languageVersion: snippet.languageVersion,
     extension: "",
-    author: snippet.owner,
-    compliance: snippet.valid ? "compliant" : "not-compliant",
+    author: snippet.ownerName || snippet.owner,
+    authorId: snippet.owner,
+    compliance: snippet.compliance,
+    processing: snippet.processing,
 });
 
 export const mapGetSnippet = (
@@ -48,8 +56,15 @@ export const mapGetSnippet = (
     language: snippet.language,
     languageVersion: snippet.languageVersion,
     extension: "",
-    author: snippet.owner,
-    compliance: "pending",
+    author: snippet.ownerName || snippet.owner,
+    authorId: snippet.owner,
+    isOwner: snippet.isOwner,
+    compliance: snippet.compliance,
+    processing: snippet.processing,
+    lintIssues: snippet.lintIssues ?? [],
+    validationStatus: snippet.validationStatus,
+    validationError: snippet.validationError,
+    formatStatus: snippet.formatStatus,
 });
 
 export const mapUpdateSnippet = (
@@ -63,6 +78,7 @@ export const mapUpdateSnippet = (
     languageVersion: snippet.languageVersion,
     extension: "",
     author: snippet.owner,
+    authorId: snippet.owner,
     compliance: "pending",
 });
 
@@ -73,4 +89,25 @@ export const mapPaginatedSnippets = (
     page_size: response.size,
     count: response.totalElements,
     snippets: response.content.map(mapSnippetListItem),
+});
+
+export const mapLanguage = (language: BackendLanguage): FileType => ({
+    language: language.language,
+    extension: language.extension,
+    extensions: language.extensions,
+    versions: language.versions,
+    defaultVersion: language.defaultVersion,
+});
+
+export const mapRule = (rule: BackendRule): Rule => ({...rule});
+
+export const mapTestCase = (test: BackendTestCase): TestCase => ({
+    id: test.id,
+    name: test.name,
+    input: test.input,
+    output: test.output,
+    status: test.status,
+    actualOutput: test.actualOutput,
+    error: test.error,
+    lastRunAt: test.lastRunAt,
 });

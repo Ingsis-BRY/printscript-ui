@@ -2,9 +2,13 @@ import { httpClient } from "./httpClient";
 
 import {
     BackendCreateSnippet,
+    BackendFormatResponse,
     BackendGetSnippet,
+    BackendLanguage,
     BackendPage,
+    BackendRule,
     BackendSnippetListItem,
+    BackendTestCase,
     BackendUpdateSnippet,
     BackendUserPage,
 } from "./backendSnippet";
@@ -12,7 +16,10 @@ import {
 import {
     mapCreateSnippet,
     mapGetSnippet,
+    mapLanguage,
     mapPaginatedSnippets,
+    mapRule,
+    mapTestCase,
     mapUpdateSnippet,
 } from "./snippetMapper";
 
@@ -27,6 +34,12 @@ import {
     UpdateSnippetFull,
 } from "../snippet";
 import {PaginatedUsers} from "../users";
+import {SnippetOperations} from "../snippetOperations";
+import type {TestRunResult} from "../queries";
+import {FileType} from "../../types/FileType";
+import {Rule} from "../../types/Rule";
+import {TestCase} from "../../types/TestCase";
+import {openSnippetRun, RunServerMessage} from "./snippetRunSocket";
 
 const toFormData = (data: SnippetFileData): FormData => {
     const form = new FormData();
@@ -38,7 +51,10 @@ const toFormData = (data: SnippetFileData): FormData => {
     return form;
 };
 
-export class HttpSnippetOperations {
+const toRuleUpdates = (rules: Rule[]) =>
+    rules.map(r => ({id: r.id, isActive: r.isActive, value: r.value ?? null}));
+
+export class HttpSnippetOperations implements SnippetOperations {
 
     async createSnippetFromFile(data: SnippetFileData): Promise<Snippet> {
         const response = await httpClient.post<BackendCreateSnippet>(
@@ -100,6 +116,7 @@ export class HttpSnippetOperations {
         valid,
         sortBy,
         direction,
+        relationship,
     }: SnippetListParams): Promise<PaginatedSnippets> {
 
         const response = await httpClient.get<
@@ -113,6 +130,7 @@ export class HttpSnippetOperations {
                 valid,
                 sortBy,
                 direction,
+                relationship: relationship || undefined,
             },
         });
 
@@ -171,5 +189,92 @@ export class HttpSnippetOperations {
         await httpClient.delete(`/snippets/${id}`);
 
         return id;
+    }
+
+    async getFormatRules(): Promise<Rule[]> {
+        const response = await httpClient.get<BackendRule[]>("/rules/format");
+        return response.data.map(mapRule);
+    }
+
+    async getLintingRules(): Promise<Rule[]> {
+        const response = await httpClient.get<BackendRule[]>("/rules/lint");
+        return response.data.map(mapRule);
+    }
+
+    async modifyFormatRule(newRules: Rule[]): Promise<Rule[]> {
+        const response = await httpClient.put<BackendRule[]>("/rules/format", toRuleUpdates(newRules));
+        return response.data.map(mapRule);
+    }
+
+    async modifyLintingRule(newRules: Rule[]): Promise<Rule[]> {
+        const response = await httpClient.put<BackendRule[]>("/rules/lint", toRuleUpdates(newRules));
+        return response.data.map(mapRule);
+    }
+
+    async getTestCases(snippetId: string): Promise<TestCase[]> {
+        const response = await httpClient.get<BackendTestCase[]>(`/snippets/${snippetId}/tests`);
+        return response.data.map(mapTestCase);
+    }
+
+    async postTestCase(snippetId: string, testCase: Partial<TestCase>): Promise<TestCase> {
+        const body = {name: testCase.name, input: testCase.input ?? [], output: testCase.output ?? []};
+        const response = testCase.id
+            ? await httpClient.put<BackendTestCase>(`/snippets/${snippetId}/tests/${testCase.id}`, body)
+            : await httpClient.post<BackendTestCase>(`/snippets/${snippetId}/tests`, body);
+        return mapTestCase(response.data);
+    }
+
+    async removeTestCase(snippetId: string, testId: string): Promise<string> {
+        await httpClient.delete(`/snippets/${snippetId}/tests/${testId}`);
+        return testId;
+    }
+
+    async formatSnippet(snippetId: string, content: string): Promise<string> {
+        const response = await httpClient.post<BackendFormatResponse>(`/snippets/${snippetId}/format`, {content});
+        return response.data.formatted;
+    }
+
+    async getFileTypes(): Promise<FileType[]> {
+        const response = await httpClient.get<BackendLanguage[]>("/languages");
+        return response.data.map(mapLanguage);
+    }
+
+    testSnippet(snippetId: string, testId: string, onOutput?: (line: string) => void): Promise<TestRunResult> {
+        return new Promise<TestRunResult>((resolve, reject) => {
+            let settled = false;
+            let connection: { close(): void } | undefined;
+            const settle = (action: () => void) => {
+                if (settled) return;
+                settled = true;
+                connection?.close();
+                action();
+            };
+            const onMessage = (message: RunServerMessage) => {
+                switch (message.type) {
+                    case "output":
+                        onOutput?.(message.line);
+                        break;
+                    case "done":
+                        settle(() => resolve({
+                            result: message.passed === true && !message.error ? "success" : "fail",
+                            outputs: message.outputs,
+                            error: message.error,
+                        }));
+                        break;
+                    case "rejected":
+                    case "error":
+                        settle(() => reject(new Error(message.detail)));
+                        break;
+                }
+            };
+            openSnippetRun(snippetId, {
+                onMessage,
+                onClose: (_event, opened) => settle(() => reject(new Error(
+                    opened ? "Connection lost" : "Could not connect (session expired or no access)"))),
+            }, {type: "start", mode: "test", testId}).then(conn => {
+                connection = conn;
+                if (settled) conn.close();
+            }).catch(e => settle(() => reject(e instanceof Error ? e : new Error("Could not connect"))));
+        });
     }
 }

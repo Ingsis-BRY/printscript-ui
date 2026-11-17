@@ -12,7 +12,7 @@ import {
 import autoBind from 'auto-bind'
 import {PaginatedUsers} from "../users.ts";
 import {TestCase} from "../../types/TestCase.ts";
-import {TestCaseResult} from "../queries.tsx";
+import {TestRunResult} from "../queries.tsx";
 import {FileType} from "../../types/FileType.ts";
 import {Rule} from "../../types/Rule.ts";
 
@@ -104,7 +104,7 @@ export class FakeSnippetOperations implements SnippetOperations {
     })
   }
 
-  formatSnippet(snippetContent: string): Promise<string> {
+  formatSnippet(_snippetId: string, snippetContent: string): Promise<string> {
     return new Promise(resolve => {
       setTimeout(() => resolve(this.fakeStore.formatSnippet(snippetContent)), DELAY)
     })
@@ -116,21 +116,25 @@ export class FakeSnippetOperations implements SnippetOperations {
     })
   }
 
-  postTestCase(testCase: TestCase): Promise<TestCase> {
+  postTestCase(_snippetId: string, testCase: Partial<TestCase>): Promise<TestCase> {
     return new Promise(resolve => {
       setTimeout(() => resolve(this.fakeStore.postTestCase(testCase)), DELAY)
     })
   }
 
-  removeTestCase(id: string): Promise<string> {
+  removeTestCase(_snippetId: string, id: string): Promise<string> {
     return new Promise(resolve => {
       setTimeout(() => resolve(this.fakeStore.removeTestCase(id)), DELAY)
     })
   }
 
-  testSnippet(): Promise<TestCaseResult> {
+  testSnippet(_snippetId: string, _testId: string, onOutput?: (line: string) => void): Promise<TestRunResult> {
     return new Promise(resolve => {
-      setTimeout(() => resolve(this.fakeStore.testSnippet()), DELAY)
+      setTimeout(() => {
+        const result = this.fakeStore.testSnippet()
+        onOutput?.(result)
+        resolve({result, outputs: [result], error: null})
+      }, DELAY)
     })
   }
 

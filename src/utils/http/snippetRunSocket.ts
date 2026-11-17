@@ -11,12 +11,13 @@ export type RunIssue = {
 export type RunServerMessage =
     | { type: "output", line: string }
     | { type: "awaiting-input", prompt: string }
-    | { type: "done", outputs: string[], error: RunIssue | null }
+    | { type: "done", outputs: string[], error: RunIssue | null, passed?: boolean | null }
     | { type: "rejected", title: string, detail: string, properties: Record<string, unknown> }
     | { type: "error", status: number, title: string, detail: string }
 
 export type RunClientMessage =
     | { type: "start", mode?: "interactive" }
+    | { type: "start", mode: "test", testId: string }
     | { type: "input", value: string }
 
 export type SnippetRunConnection = {
@@ -36,7 +37,7 @@ export const snippetRunUrl = (snippetId: string): string => {
     return u.toString();
 }
 
-export const openSnippetRun = async (snippetId: string, handlers: SnippetRunHandlers): Promise<SnippetRunConnection> => {
+export const openSnippetRun = async (snippetId: string, handlers: SnippetRunHandlers, start: RunClientMessage = {type: "start"}): Promise<SnippetRunConnection> => {
     const token = await getAccessToken();
     const ws = new WebSocket(
         snippetRunUrl(snippetId),
@@ -48,7 +49,7 @@ export const openSnippetRun = async (snippetId: string, handlers: SnippetRunHand
     };
     ws.onopen = () => {
         opened = true;
-        send({type: "start"});
+        send(start);
     };
     ws.onmessage = (event) => {
         let message: RunServerMessage;
