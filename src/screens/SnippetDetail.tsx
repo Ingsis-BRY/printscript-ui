@@ -14,7 +14,7 @@ import {
 } from "../utils/queries.tsx";
 import {useFormatSnippet, useGetSnippetById, useShareSnippet} from "../utils/queries.tsx";
 import {Bòx} from "../components/snippet-table/SnippetBox.tsx";
-import {BugReport, Delete, Download, Edit, FileUpload, Save, Share} from "@mui/icons-material";
+import {BugReport, Delete, Download, Edit, FileUpload, PlayArrow, Save, Share, StopRounded} from "@mui/icons-material";
 import {ShareSnippetModal} from "../components/snippet-detail/ShareSnippetModal.tsx";
 import {TestSnippetModal} from "../components/snippet-test/TestSnippetModal.tsx";
 import {Snippet, SnippetDownloadVersion} from "../utils/snippet.ts";
@@ -71,6 +71,7 @@ export const SnippetDetail = (props: SnippetDetailProps) => {
   const [deleteConfirmationModalOpen, setDeleteConfirmationModalOpen] = useState(false)
   const [testModalOpened, setTestModalOpened] = useState(false);
   const [editModalOpened, setEditModalOpened] = useState(false);
+  const [runSnippet, setRunSnippet] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {createSnackbar} = useSnackbarContext()
 
@@ -164,11 +165,11 @@ export const SnippetDetail = (props: SnippetDetailProps) => {
               <input hidden type="file" ref={fileInputRef} onChange={e => handleUpdateFromFile(e.target)}/>
               <DownloadButton snippet={snippet} version="original"/>
               <DownloadButton snippet={snippet} version="formatted"/>
-              {/*<Tooltip title={runSnippet ? "Stop run" : "Run"}>*/}
-              {/*  <IconButton onClick={() => setRunSnippet(!runSnippet)}>*/}
-              {/*    {runSnippet ? <StopRounded/> : <PlayArrow/>}*/}
-              {/*  </IconButton>*/}
-              {/*</Tooltip>*/}
+              <Tooltip title={runSnippet ? "Stop run" : "Run"}>
+                <IconButton onClick={() => setRunSnippet(!runSnippet)}>
+                  {runSnippet ? <StopRounded/> : <PlayArrow/>}
+                </IconButton>
+              </Tooltip>
               {/* TODO: we can implement a live mode*/}
               <Tooltip title={"Format"}>
                 <IconButton onClick={() => formatSnippet(code)} disabled={isFormatLoading}>
@@ -204,7 +205,9 @@ export const SnippetDetail = (props: SnippetDetailProps) => {
             </Box>
             <Box pt={1} flex={1} marginTop={2}>
               <Alert severity="info">Output</Alert>
-              <SnippetExecution />
+              {snippet && code !== snippet.content &&
+                  <Alert severity="info">Run uses the saved version — save to run your changes</Alert>}
+              <SnippetExecution snippetId={id} running={runSnippet} onFinished={() => setRunSnippet(false)} />
             </Box>
           </>
         }

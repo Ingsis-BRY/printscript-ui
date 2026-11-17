@@ -66,7 +66,17 @@ The user only gets them if they have the role `snippet-user` in Auth0; without i
 Tokens are kept in `localStorage`, so a reload doesn't log the user out.
 
 Sharing (`POST /snippets/{id}/share`) and the user search of the share modal (`GET /users?name=`) use the
-backend. Tests, rules and formatting are still mocked.
+backend, and so does the interactive run (see below). Tests, rules and formatting are still mocked.
+
+### Interactive run (WebSocket)
+
+The **Run** button of a snippet opens `wss://<host>/api/snippets/{id}/run`. The URL is derived from
+`VITE_API_BASE_URL` (default `/api`, relative or absolute) by swapping `http(s)` for `ws(s)`.
+Browsers can't set headers on a WebSocket, so the token travels in the subprotocols:
+`new WebSocket(url, ["snippet-run.v1", "bearer.<access_token>"])`; it never appears in the URL.
+The server runs the **saved** version of the snippet (the UI warns when the editor has unsaved changes).
+Output and prompts stream into the console, the input box is enabled while a prompt is awaited, and
+**Stop** closes the socket. Server messages: `output`, `awaiting-input`, `done`, `rejected`, `error`.
 
 ### Local development
 
@@ -80,7 +90,8 @@ VITE_API_BASE_URL=/api
 ```
 
 `npm run dev` proxies `/api` to `VITE_API_PROXY_TARGET` (default `http://localhost:8080`, snippet-service),
-the same way nginx does in the stack, so the browser never makes a cross-origin call.
+the same way nginx does in the stack (with `ws: true` for the run socket), so the browser never makes a
+cross-origin call. Running a snippet in dev needs Snippet-Service (and the engine) up at that target.
 
 `http://localhost:5173` and `https://localhost` must be in the Allowed Callback URLs, Allowed Logout URLs
 and Allowed Web Origins of the Auth0 application.
