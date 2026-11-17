@@ -1,10 +1,11 @@
-import {Box, Button, CircularProgress, Input, InputLabel, MenuItem, Select, TextField, Typography} from "@mui/material";
+import {Alert, Box, Button, CircularProgress, Input, InputLabel, MenuItem, Select, TextField, Typography} from "@mui/material";
 import {useEffect, useState} from "react";
 import {Save} from "@mui/icons-material";
 import {ModalWrapper} from "../common/ModalWrapper.tsx";
 import {useGetFileTypes, useUpdateSnippetFull} from "../../utils/queries.tsx";
 import {useSnackbarContext} from "../../contexts/snackbarContext.tsx";
 import {Snippet} from "../../utils/snippet.ts";
+import {describeError} from "../../utils/http/problem.ts";
 
 type EditSnippetModalProps = {
   open: boolean;
@@ -20,7 +21,9 @@ export const EditSnippetModal = ({open, onClose, snippet, content, onSaved}: Edi
   const [description, setDescription] = useState(snippet.description)
   const [language, setLanguage] = useState(snippet.language)
   const [languageVersion, setLanguageVersion] = useState(snippet.languageVersion)
+  const [error, setError] = useState<string | null>(null)
   const {data: fileTypes} = useGetFileTypes()
+  const versions = fileTypes?.find(f => f.language === language)?.versions ?? []
   const {createSnackbar} = useSnackbarContext()
   const {mutateAsync: updateSnippet, isLoading} = useUpdateSnippetFull({onSuccess: onSaved})
 
@@ -30,16 +33,26 @@ export const EditSnippetModal = ({open, onClose, snippet, content, onSaved}: Edi
       setDescription(snippet.description)
       setLanguage(snippet.language)
       setLanguageVersion(snippet.languageVersion)
+      setError(null)
     }
   }, [open, snippet]);
 
+  const handleLanguageChange = (next: string) => {
+    setLanguage(next)
+    const nextVersions = fileTypes?.find(f => f.language === next)?.versions ?? []
+    if (!nextVersions.includes(languageVersion)) setLanguageVersion(nextVersions.at(-1) ?? '')
+  }
+
   const handleSave = async () => {
+    setError(null)
     try {
       await updateSnippet({id: snippet.id, updateSnippet: {name, description, language, languageVersion, content}})
       createSnackbar('success', 'Snippet updated')
       onClose()
     } catch (e) {
-      createSnackbar('error', e instanceof Error ? e.message : 'Could not update snippet')
+      const message = describeError(e, 'Could not update snippet')
+      setError(message)
+      createSnackbar('error', message)
     }
   }
 
@@ -50,7 +63,7 @@ export const EditSnippetModal = ({open, onClose, snippet, content, onSaved}: Edi
             Edit Snippet
           </Typography>
           <Button variant="contained" disableRipple sx={{boxShadow: 0}} onClick={handleSave}
-                  disabled={!name.trim() || !language || !languageVersion.trim() || isLoading}>
+                  disabled={!name.trim() || !language || !languageVersion || isLoading}>
             <Box pr={1} display={"flex"} alignItems={"center"}>
               {isLoading ? <CircularProgress size={24}/> : <Save/>}
             </Box>
@@ -64,12 +77,15 @@ export const EditSnippetModal = ({open, onClose, snippet, content, onSaved}: Edi
                      multiline rows={3} fullWidth/>
           <InputLabel id="edit-language-label">Language</InputLabel>
           <Select labelId="edit-language-label" value={language} sx={{width: '50%'}}
-                  onChange={e => setLanguage(e.target.value)}>
+                  onChange={e => handleLanguageChange(e.target.value)}>
             {fileTypes?.map(x => <MenuItem key={x.language} value={x.language}>{x.language}</MenuItem>)}
           </Select>
-          <InputLabel htmlFor="edit-language-version">Language Version</InputLabel>
-          <Input id="edit-language-version" value={languageVersion}
-                 onChange={e => setLanguageVersion(e.target.value)} sx={{width: '50%'}}/>
+          <InputLabel id="edit-language-version-label">Language Version</InputLabel>
+          <Select labelId="edit-language-version-label" id="edit-language-version" value={languageVersion}
+                  onChange={e => setLanguageVersion(e.target.value)} sx={{width: '50%'}}>
+            {versions.map(v => <MenuItem key={v} value={v}>{v}</MenuItem>)}
+          </Select>
+          {error && <Alert severity="error">{error}</Alert>}
         </Box>
       </ModalWrapper>
   )

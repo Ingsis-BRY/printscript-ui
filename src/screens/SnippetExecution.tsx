@@ -118,7 +118,6 @@ export const SnippetExecution = ({snippetId, running, onFinished}: Props) => {
               readOnly
               onValueChange={() => {}}
               highlight={(code) => highlight(code, languages.js, 'javascript')}
-              maxLength={1000}
               style={{
                   fontFamily: "monospace",
                   fontSize: 17,

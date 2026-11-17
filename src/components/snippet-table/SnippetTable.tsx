@@ -19,7 +19,14 @@ import {AddSnippetModal} from "./AddSnippetModal.tsx";
 import {useRef, useState} from "react";
 import {Add, Search} from "@mui/icons-material";
 import {LoadingSnippetRow, SnippetRow} from "./SnippetRow.tsx";
-import {CreateSnippetWithLang, getFileLanguage, Snippet, SnippetSortBy, SortDirection} from "../../utils/snippet.ts";
+import {
+  CreateSnippetWithLang,
+  getFileLanguage,
+  Snippet,
+  SnippetRelationship,
+  SnippetSortBy,
+  SortDirection
+} from "../../utils/snippet.ts";
 import {usePaginationContext} from "../../contexts/paginationContext.tsx";
 import {useSnackbarContext} from "../../contexts/snackbarContext.tsx";
 import {useGetFileTypes} from "../../utils/queries.tsx";
@@ -34,10 +41,15 @@ type SnippetTableProps = {
   sortBy: SnippetSortBy;
   direction: SortDirection;
   onSort: (field: SnippetSortBy) => void;
+  relationship: SnippetRelationship;
+  onRelationshipChange: (relationship: SnippetRelationship) => void;
+  validity: '' | 'true' | 'false';
+  onValidityChange: (validity: '' | 'true' | 'false') => void;
 }
 
 export const SnippetTable = (props: SnippetTableProps) => {
-  const {snippets, handleClickSnippet, loading, handleSearchSnippet, language, onLanguageChange, sortBy, direction, onSort} = props;
+  const {snippets, handleClickSnippet, loading, handleSearchSnippet, language, onLanguageChange, sortBy, direction, onSort,
+    relationship, onRelationshipChange, validity, onValidityChange} = props;
   const [addModalOpened, setAddModalOpened] = useState(false);
   const [popoverMenuOpened, setPopoverMenuOpened] = useState(false)
   const [snippet, setSnippet] = useState<CreateSnippetWithLang | undefined>()
@@ -90,8 +102,8 @@ export const SnippetTable = (props: SnippetTableProps) => {
           <Box sx={{background: 'white', width: '30%', display: 'flex'}}>
             <InputBase
                 sx={{ml: 1, flex: 1}}
-                placeholder="Search FileType"
-                inputProps={{'aria-label': 'search'}}
+                placeholder="Search by name"
+                inputProps={{'aria-label': 'search', 'data-testid': 'search-name'}}
                 onChange={e => handleSearchSnippet(e.target.value)}
             />
             <IconButton type="button" sx={{p: '10px'}} aria-label="search">
@@ -100,11 +112,28 @@ export const SnippetTable = (props: SnippetTableProps) => {
           </Box>
           <Select size="small" displayEmpty sx={{background: 'white', minWidth: 160}}
                   value={language} onChange={e => onLanguageChange(e.target.value)}
-                  inputProps={{'aria-label': 'language filter'}}>
+                  inputProps={{'aria-label': 'language filter'}}
+                  SelectDisplayProps={{'data-testid': 'language-filter'} as object}>
             <MenuItem value="">All languages</MenuItem>
             {fileTypes?.map(x => <MenuItem key={x.language} value={x.language}>{x.language}</MenuItem>)}
           </Select>
-          <Button ref={popoverRef} variant="contained" disableRipple sx={{boxShadow: 0}}
+          <Select size="small" sx={{background: 'white', minWidth: 170}}
+                  value={relationship} onChange={e => onRelationshipChange(e.target.value as SnippetRelationship)}
+                  inputProps={{'aria-label': 'Relationship'}}
+                  SelectDisplayProps={{'data-testid': 'relationship-filter'} as object}>
+            <MenuItem value="all">All snippets</MenuItem>
+            <MenuItem value="owned">Owned by me</MenuItem>
+            <MenuItem value="shared">Shared with me</MenuItem>
+          </Select>
+          <Select size="small" displayEmpty sx={{background: 'white', minWidth: 150}}
+                  value={validity} onChange={e => onValidityChange(e.target.value as '' | 'true' | 'false')}
+                  inputProps={{'aria-label': 'Validity'}}
+                  SelectDisplayProps={{'data-testid': 'validity-filter'} as object}>
+            <MenuItem value="">Any validity</MenuItem>
+            <MenuItem value="true">Valid</MenuItem>
+            <MenuItem value="false">Invalid</MenuItem>
+          </Select>
+          <Button ref={popoverRef} variant="contained" disableRipple sx={{boxShadow: 0}} data-testid="add-snippet-button"
                   onClick={() => setPopoverMenuOpened(true)}>
             <Add/>
             Add Snippet
@@ -155,12 +184,12 @@ export const SnippetTable = (props: SnippetTableProps) => {
                            setSnippetFile(undefined)
                          }}/>
         <Menu anchorEl={popoverRef.current} open={popoverMenuOpened} onClick={handleClickMenu}>
-          <MenuItem onClick={() => {
+          <MenuItem data-testid="create-snippet-option" onClick={() => {
             setSnippet(undefined)
             setSnippetFile(undefined)
             setAddModalOpened(true)
           }}>Create snippet</MenuItem>
-          <MenuItem onClick={() => inputRef?.current?.click()}>Load snippet from file</MenuItem>
+          <MenuItem data-testid="load-snippet-option" onClick={() => inputRef?.current?.click()}>Load snippet from file</MenuItem>
         </Menu>
         <input hidden type={"file"} ref={inputRef} multiple={false} data-testid={"upload-file-input"}
                onChange={e => handleLoadSnippet(e?.target)}/>

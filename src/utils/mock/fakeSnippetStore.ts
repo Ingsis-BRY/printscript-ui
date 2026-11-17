@@ -148,18 +148,26 @@ const fileTypes: FileType[] = [
   {
     language: "printscript",
     extension: "prs",
+    versions: ["1.0", "1.1"],
+    defaultVersion: "1.0",
   },
   {
     language: "python",
     extension: "py",
+    versions: ["1.0", "1.1"],
+    defaultVersion: "1.0",
   },
   {
     language: "java",
     extension: "java",
+    versions: ["1.0", "1.1"],
+    defaultVersion: "1.0",
   },
   {
     language: 'golang',
-    extension: 'go'
+    extension: 'go',
+    versions: ["1.0", "1.1"],
+    defaultVersion: "1.0",
   }
 ]
 

@@ -6,27 +6,30 @@ import {
   Snippet,
   SnippetDownloadVersion,
   SnippetFileData,
+  CodeIssue,
   SnippetListParams,
   UpdateSnippet,
   UpdateSnippetFull
 } from './snippet.ts';
 import {SnippetOperations} from "./snippetOperations.ts";
 import {PaginatedUsers} from "./users.ts";
-import {createHybridSnippetOperations} from "./http/hybridSnippetOperations.ts";
+import {HttpSnippetOperations} from "./http/httpSnippetOperations.ts";
 import {TestCase} from "../types/TestCase.ts";
 import {FileType} from "../types/FileType.ts";
 import {Rule} from "../types/Rule.ts";
 
 
 export const useSnippetsOperations = () => {
-  // Snippet-service endpoints use the real backend; the rest is still mocked.
-  return useMemo<SnippetOperations>(() => createHybridSnippetOperations(), [])
+  return useMemo<SnippetOperations>(() => new HttpSnippetOperations(), [])
 }
 
 export const useGetSnippets = (params: SnippetListParams) => {
   const snippetOperations = useSnippetsOperations()
 
-  return useQuery<PaginatedSnippets, Error>(['listSnippets', params], () => snippetOperations.listSnippetDescriptors(params), {keepPreviousData: true});
+  return useQuery<PaginatedSnippets, Error>(['listSnippets', params], () => snippetOperations.listSnippetDescriptors(params), {
+    keepPreviousData: true,
+    refetchInterval: data => data?.snippets.some(s => s.processing === 'pending') ? 5000 : false,
+  });
 };
 
 export const useGetSnippetById = (id: string) => {
@@ -34,6 +37,7 @@ export const useGetSnippetById = (id: string) => {
 
   return useQuery<Snippet | undefined, Error>(['snippet', id], () => snippetOperations.getSnippetById(id), {
     enabled: !!id, // This query will not execute until the id is provided
+    refetchInterval: data => data?.processing === 'pending' ? 3000 : false,
   });
 };
 
@@ -106,28 +110,31 @@ export const useShareSnippet = () => {
 };
 
 
-export const useGetTestCases = () => {
+export const useGetTestCases = (snippetId: string) => {
   const snippetOperations = useSnippetsOperations()
 
-  return useQuery<TestCase[] | undefined, Error>(['testCases'], () => snippetOperations.getTestCases(), {});
+  return useQuery<TestCase[], Error>(['testCases', snippetId], () => snippetOperations.getTestCases(snippetId), {
+    enabled: !!snippetId,
+    refetchInterval: data => data?.some(t => t.status === 'pending') ? 3000 : false,
+  });
 };
 
 
-export const usePostTestCase = () => {
+export const usePostTestCase = (snippetId: string) => {
   const snippetOperations = useSnippetsOperations()
 
   return useMutation<TestCase, Error, Partial<TestCase>>(
-      (tc) => snippetOperations.postTestCase(tc)
+      (tc) => snippetOperations.postTestCase(snippetId, tc)
   );
 };
 
 
-export const useRemoveTestCase = ({onSuccess}: {onSuccess: () => void}) => {
+export const useRemoveTestCase = (snippetId: string, {onSuccess}: {onSuccess: () => void}) => {
   const snippetOperations = useSnippetsOperations()
 
   return useMutation<string, Error, string>(
-      ['removeTestCase'],
-      (id) => snippetOperations.removeTestCase(id),
+      ['removeTestCase', snippetId],
+      (testId) => snippetOperations.removeTestCase(snippetId, testId),
       {
         onSuccess,
       }
@@ -135,12 +142,13 @@ export const useRemoveTestCase = ({onSuccess}: {onSuccess: () => void}) => {
 };
 
 export type TestCaseResult = "success" | "fail"
+export type TestRunResult = { result: TestCaseResult; outputs: string[]; error: CodeIssue | null }
 
-export const useTestSnippet = () => {
+export const useTestSnippet = (snippetId: string) => {
   const snippetOperations = useSnippetsOperations()
 
-  return useMutation<TestCaseResult, Error, Partial<TestCase>>(
-      (tc) => snippetOperations.testSnippet(tc)
+  return useMutation<TestRunResult, Error, { testId: string; onOutput?: (line: string) => void }>(
+      ({testId, onOutput}) => snippetOperations.testSnippet(snippetId, testId, onOutput)
   )
 }
 
@@ -178,11 +186,11 @@ export const useModifyLintingRules = ({onSuccess}: {onSuccess: () => void}) => {
   );
 }
 
-export const useFormatSnippet = () => {
+export const useFormatSnippet = (snippetId: string) => {
   const snippetOperations = useSnippetsOperations()
 
   return useMutation<string, Error, string>(
-      snippetContent => snippetOperations.formatSnippet(snippetContent)
+      snippetContent => snippetOperations.formatSnippet(snippetId, snippetContent)
   );
 }
 
