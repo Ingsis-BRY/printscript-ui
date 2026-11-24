@@ -1,4 +1,5 @@
 import {getAccessToken} from "./accessToken.ts";
+import {API_BASE_URL, toWebSocketUrl} from "./apiBaseUrl.ts";
 
 export const SNIPPET_RUN_SUBPROTOCOL = "snippet-run.v1";
 
@@ -30,12 +31,8 @@ export type SnippetRunHandlers = {
     onClose: (event: CloseEvent, opened: boolean) => void
 }
 
-export const snippetRunUrl = (snippetId: string): string => {
-    const u = new URL(import.meta.env.VITE_API_BASE_URL ?? "/api", window.location.origin);
-    u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
-    u.pathname = `${u.pathname.replace(/\/$/, "")}/snippets/${encodeURIComponent(snippetId)}/run`;
-    return u.toString();
-}
+export const snippetRunUrl = (snippetId: string): string =>
+    toWebSocketUrl(API_BASE_URL, `snippets/${encodeURIComponent(snippetId)}/run`, window.location.origin);
 
 export const openSnippetRun = async (snippetId: string, handlers: SnippetRunHandlers, start: RunClientMessage = {type: "start"}): Promise<SnippetRunConnection> => {
     const token = await getAccessToken();

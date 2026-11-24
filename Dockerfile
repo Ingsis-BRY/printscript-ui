@@ -3,6 +3,7 @@ WORKDIR /app
 COPY package*.json .npmrc ./
 RUN npm ci
 COPY . .
+# Optional override; empty means the same-origin default /api.
 ARG VITE_API_BASE_URL
 ARG VITE_AUTH0_DOMAIN
 ARG VITE_AUTH0_CLIENT_ID
