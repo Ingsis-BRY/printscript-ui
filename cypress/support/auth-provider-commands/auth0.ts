@@ -1,24 +1,26 @@
-
-
+/**
+ * Logs in through Auth0's Universal Login page, the way a person does: the app redirects to the tenant,
+ * we fill the form there (cy.origin, since it's another domain) and Auth0 sends us back to the app.
+ * Handles both the single-page form and the identifier-first one (username, Continue, then password).
+ */
 export function loginViaAuth0Ui(username: string, password: string) {
-  // App landing page redirects to Auth0.
   cy.visit('/')
 
-  // Login on Auth0.
   cy.origin(
       Cypress.env('auth0_domain'),
-      { args: { username, password } },
-      ({ username, password }) => {
-        cy.get('input#username').type(username)
-        cy.get('input#password').type(password, { log: false })
-        cy.contains('button[value=default]', 'Continue').click()
+      {args: {username, password}},
+      ({username, password}) => {
+        cy.get('input#username', {timeout: 20000}).type(username)
+        cy.get('body').then($body => {
+          if ($body.find('input#password').length === 0) {
+            cy.get('button[type=submit][name=action]').first().click()
+          }
+        })
+        cy.get('input#password').type(password, {log: false})
+        cy.get('button[type=submit][name=action]').first().click()
       }
   )
 
-  // Ensure Auth0 has redirected us back to the RWA.
-  cy.url().should('equal', 'http://localhost:3000/')
+  // back on the app, logged in
+  cy.location('origin', {timeout: 20000}).should('eq', new URL(Cypress.config('baseUrl') ?? '').origin)
 }
-
-
-
-

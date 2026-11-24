@@ -28,3 +28,35 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  e2e:
+    # The stubbed Cypress suite: fake Auth0 and a stubbed API (vite --mode e2e), so it needs no secrets.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npm run dev:e2e
+          wait-on: 'http://localhost:5174'
+          config: baseUrl=http://localhost:5174
+
+      - name: Keep screenshots of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots

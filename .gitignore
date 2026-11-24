@@ -24,5 +24,12 @@ dist-ssr
 *.sw?
 
 .env*
+# the Cypress mode file has no secrets (Auth0 is faked, /api is stubbed)
+!.env.e2e
 next-env.d.ts
 .next
+# Cypress run artefacts
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+cypress.env.json

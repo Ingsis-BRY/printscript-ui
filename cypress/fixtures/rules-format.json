@@ -1,0 +1,6 @@
+[
+  { "id": "enforce-spacing-around-equals", "name": "enforce-spacing-around-equals", "description": "Spaces around '='.", "type": "boolean",
+    "isActive": false, "value": null, "default": false, "options": null, "min": null, "max": null, "since": "1.0" },
+  { "id": "indent-inside-if", "name": "indent-inside-if", "description": "Spaces of indentation inside an if block.", "type": "integer",
+    "isActive": false, "value": null, "default": 4, "options": null, "min": 0, "max": 16, "since": "1.1" }
+]

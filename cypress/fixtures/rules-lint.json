@@ -1,0 +1,6 @@
+[
+  { "id": "identifier_format", "name": "identifier_format", "description": "Identifiers must follow this naming style.", "type": "enum",
+    "isActive": false, "value": null, "default": null, "options": ["camelCase", "snake_case"], "min": null, "max": null, "since": "1.0" },
+  { "id": "mandatory-variable-or-literal-in-println", "name": "mandatory-variable-or-literal-in-println", "description": "println only takes a variable or a literal.", "type": "boolean",
+    "isActive": true, "value": null, "default": false, "options": null, "min": null, "max": null, "since": "1.0" }
+]

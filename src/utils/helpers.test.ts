@@ -51,6 +51,8 @@ describe("defaultValueFor", () => {
 
     it("uses the minimum for integer rules and the first option for enum rules", () => {
         expect(defaultValueFor({id: "a", name: "a", isActive: false, type: "integer", value: null, min: 2})).toBe(2);
+        expect(defaultValueFor({id: "a", name: "a", isActive: false, type: "integer", value: null, min: 0, default: 4})).toBe(4);
+        expect(defaultValueFor({id: "b", name: "b", isActive: false, type: "enum", options: ["camelCase", "snake_case"], default: "snake_case"})).toBe("snake_case");
         expect(defaultValueFor({id: "a", name: "a", isActive: false, type: "integer", value: null})).toBe(0);
         expect(defaultValueFor({id: "b", name: "b", isActive: false, type: "enum", options: ["camelCase", "snake_case"]})).toBe("camelCase");
     });
