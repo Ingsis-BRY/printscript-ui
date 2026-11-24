@@ -15,7 +15,33 @@ env:
   IMAGE_NAME: ingsis-bry/printscript-ui
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Build
+        run: npm run build
+
   publish:
+    needs: check
     runs-on: ubuntu-latest
 
     steps:
@@ -41,7 +67,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           build-args: |
-            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
             VITE_AUTH0_DOMAIN=${{ vars.VITE_AUTH0_DOMAIN }}
             VITE_AUTH0_CLIENT_ID=${{ vars.VITE_AUTH0_CLIENT_ID }}
             VITE_AUTH0_AUDIENCE=${{ vars.VITE_AUTH0_AUDIENCE }}
