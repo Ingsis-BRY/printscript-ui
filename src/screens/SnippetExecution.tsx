@@ -22,6 +22,7 @@ export const SnippetExecution = ({snippetId, running, onFinished}: Props) => {
   const [prompt, setPrompt] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>(null);
   const connection = useRef<SnippetRunConnection | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const onFinishedRef = useRef(onFinished);
   onFinishedRef.current = onFinished;
 
@@ -98,6 +99,11 @@ export const SnippetExecution = ({snippetId, running, onFinished}: Props) => {
     };
   }, [running, snippetId]);
 
+  // when the program waits for input, put the cursor in the input box
+  useEffect(() => {
+    if (prompt !== null) inputRef.current?.focus();
+  }, [prompt]);
+
   const code = output.join("\n")
 
   const handleEnter = (event: { key: string }) => {
@@ -126,7 +132,7 @@ export const SnippetExecution = ({snippetId, running, onFinished}: Props) => {
         </Bòx>
         {status && <Alert severity={status.severity}>{status.text}</Alert>}
         <OutlinedInput onKeyDown={handleEnter} value={input} onChange={e => setInput(e.target.value)}
-                       disabled={prompt === null}
+                       disabled={prompt === null} inputRef={inputRef} inputProps={{'data-testid': 'run-input'}}
                        placeholder={prompt || "Type input and press Enter"} fullWidth/>
       </>
     )

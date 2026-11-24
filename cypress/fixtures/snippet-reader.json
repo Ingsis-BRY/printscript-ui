@@ -1,0 +1,9 @@
+{ "id": "22222222-2222-2222-2222-222222222222", "name": "snake", "description": "breaks the camelCase rule", "language": "printscript", "languageVersion": "1.1",
+  "owner": "auth0|someone", "ownerName": "Jane Doe", "isOwner": false,
+  "currentVersion": { "id": "bbbbbbbb-0000-0000-0000-000000000001", "snippetId": "22222222-2222-2222-2222-222222222222", "versionNumber": 1,
+                      "originalContent": "let my_value: number = 5;\nprintln(my_value);", "formattedContent": null, "createdAt": "2026-11-17T10:00:00Z" },
+  "compliance": "not-compliant",
+  "lintIssues": [
+    { "rule": "InvalidIdentifier", "message": "Invalid identifier 'my_value': expected camel case.", "span": { "start": { "line": 1, "column": 5 }, "end": { "line": 1, "column": 12 } } }
+  ],
+  "validationStatus": "valid", "validationError": null, "formatStatus": "finished", "processing": "finished" }

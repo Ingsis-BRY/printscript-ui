@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -10,6 +11,13 @@ export default defineConfig(({ mode }) => {
       'process.env.BACKEND_URL': JSON.stringify(env.BACKEND_URL)
     },
     plugins: [react()],
+    resolve: {
+      // `vite --mode e2e` (Cypress): a logged-in fake Auth0, so the stubbed suite needs no real tenant.
+      // Every other mode, the production build included, uses the real @auth0/auth0-react.
+      alias: mode === 'e2e'
+        ? [{ find: '@auth0/auth0-react', replacement: fileURLToPath(new URL('./src/testing/fakeAuth0.tsx', import.meta.url)) }]
+        : [],
+    },
     server: {
       proxy: {
         '/api': {
