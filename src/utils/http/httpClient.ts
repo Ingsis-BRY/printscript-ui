@@ -1,9 +1,10 @@
 import axios from "axios";
 import {getAccessToken} from "./accessToken.ts";
 import type {Problem} from "./problem.ts";
+import {API_BASE_URL} from "./apiBaseUrl.ts";
 
 export const httpClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: API_BASE_URL,
     headers: {
         Accept: "application/json",
     },

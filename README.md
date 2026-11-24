@@ -70,8 +70,9 @@ backend, and so does the interactive run (see below). Tests, rules and formattin
 
 ### Interactive run (WebSocket)
 
-The **Run** button of a snippet opens `wss://<host>/api/snippets/{id}/run`. The URL is derived from
-`VITE_API_BASE_URL` (default `/api`, relative or absolute) by swapping `http(s)` for `ws(s)`.
+The **Run** button of a snippet opens `wss://<host>/api/snippets/{id}/run`. The URL is derived from the
+API base URL (see *Build*): a relative base resolves against the page's own host, and the scheme follows
+it (`http` -> `ws`, `https` -> `wss`).
 Browsers can't set headers on a WebSocket, so the token travels in the subprotocols:
 `new WebSocket(url, ["snippet-run.v1", "bearer.<access_token>"])`; it never appears in the URL.
 The server runs the **saved** version of the snippet (the UI warns when the editor has unsaved changes).
@@ -86,7 +87,6 @@ Create `.env.local` (gitignored):
 VITE_AUTH0_DOMAIN=snippet-searcher-bry.us.auth0.com
 VITE_AUTH0_CLIENT_ID=<client id of the "Snippet Searcher UI" application>
 VITE_AUTH0_AUDIENCE=https://snippet-searcher-api
-VITE_API_BASE_URL=/api
 ```
 
 `npm run dev` proxies `/api` to `VITE_API_PROXY_TARGET` (default `http://localhost:8080`, snippet-service),
@@ -99,8 +99,18 @@ and Allowed Web Origins of the Auth0 application.
 ### Build
 
 The Vite variables are baked into the bundle at build time. The publish workflow passes them from the
-repository variables `VITE_API_BASE_URL`, `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` and
-`VITE_AUTH0_AUDIENCE`. None of them is a secret: they end up in the JavaScript the browser downloads.
+repository variables `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` and `VITE_AUTH0_AUDIENCE`. None of them is
+a secret: they end up in the JavaScript the browser downloads.
+
+Nothing domain-specific is baked in, so **one image serves every environment** (dev and prod domains):
+
+- The API base URL defaults to the same-origin `/api` (nginx serves the UI on `/` and the API on `/api/*`).
+  `VITE_API_BASE_URL` (relative or absolute) is only an optional override; unset or empty means `/api`.
+- Auth0 uses one tenant, client and audience for every environment, and `redirect_uri`/`returnTo` are
+  `window.location.origin`. Each environment's origin must be listed in the Auth0 application's Allowed
+  Callback URLs, Allowed Logout URLs and Allowed Web Origins.
+
+The publish workflow runs lint, unit tests and the build (`check` job) before it pushes the image.
 
 ## Start working
 
