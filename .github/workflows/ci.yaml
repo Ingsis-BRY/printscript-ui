@@ -51,8 +51,10 @@ jobs:
         with:
           install: false
           start: npm run dev:e2e
-          wait-on: 'http://localhost:5174'
-          config: baseUrl=http://localhost:5174
+          # 127.0.0.1, not localhost: on the runner localhost can resolve to ::1 while Vite listens on IPv4
+          wait-on: 'http://127.0.0.1:5174'
+          wait-on-timeout: 120
+          config: baseUrl=http://127.0.0.1:5174
 
       - name: Keep screenshots of failures
         if: failure()
