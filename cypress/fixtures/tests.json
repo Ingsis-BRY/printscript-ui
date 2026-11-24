@@ -1,0 +1,6 @@
+[
+  { "id": "cccccccc-0000-0000-0000-000000000001", "snippetId": "11111111-1111-1111-1111-111111111111", "name": "prints one", "input": [], "output": ["1"],
+    "status": "passed", "actualOutput": ["1"], "error": null, "lastRunAt": "2026-11-17T10:01:00Z" },
+  { "id": "cccccccc-0000-0000-0000-000000000002", "snippetId": "11111111-1111-1111-1111-111111111111", "name": "wrong output", "input": [], "output": ["2"],
+    "status": "failed", "actualOutput": ["1"], "error": null, "lastRunAt": "2026-11-17T10:01:00Z" }
+]

@@ -95,6 +95,7 @@ export const TabPanel = ({
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
+                                    inputProps={{...params.inputProps, 'data-testid': 'test-input'}}
                                 />
                             )}
                             options={[]}
@@ -117,6 +118,7 @@ export const TabPanel = ({
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
+                                    inputProps={{...params.inputProps, 'data-testid': 'test-output'}}
                                 />
                             )}
                             options={[]}

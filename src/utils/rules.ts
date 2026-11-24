@@ -2,9 +2,12 @@ import {Rule} from "../types/Rule.ts";
 
 export const RULES_SAVED_MESSAGE = "Rules saved. Your snippets are being re-checked in the background."
 
-/** Value a rule gets when it is activated: its current value, else the lower bound / first option. */
+/** Value a rule gets when it is activated: its current value, else the engine's default, else the lower bound / first option. */
 export const defaultValueFor = (rule: Rule): string | number | null => {
   if (rule.value !== null && rule.value !== undefined) return rule.value
+  // the engine's own default for the rule, when it has one of the right type
+  if (rule.type === 'integer' && typeof rule.default === 'number') return rule.default
+  if (rule.type === 'enum' && typeof rule.default === 'string' && rule.options?.includes(rule.default)) return rule.default
   if (rule.type === 'integer') return rule.min ?? 0
   if (rule.type === 'enum') return rule.options?.[0] ?? null
   return null

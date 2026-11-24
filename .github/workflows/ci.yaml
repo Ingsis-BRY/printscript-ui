@@ -34,3 +34,32 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  e2e:
+    # The stubbed Cypress suite: fake Auth0 and a stubbed API (vite --mode e2e), so it needs no secrets.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # start-server-and-test starts Vite on 127.0.0.1:5174, waits for it and runs Cypress, exactly as
+      # locally. (cypress-io/github-action's own start/wait-on fails at once on the runner's Node 24.)
+      - name: Run Cypress
+        run: npm run test:e2e
+
+      - name: Keep screenshots of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots

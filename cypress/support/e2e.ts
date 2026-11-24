@@ -32,10 +32,9 @@ Cypress.Commands.add('loginToAuth0', (username: string, password: string) => {
       },
       {
         validate: () => {
-          // Validate presence of access token in localStorage.
-          cy.wrap(localStorage)
-              .invoke('getItem', 'authAccessToken')
-              .should('exist')
+          // still logged in: the app opens without bouncing to Auth0 (tokens live in localStorage)
+          cy.visit('/')
+          cy.get('[data-testid="add-snippet-button"]', {timeout: 20000}).should('exist')
         },
       }
   )
