@@ -46,15 +46,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # start-server-and-test starts Vite on 127.0.0.1:5174, waits for it and runs Cypress, exactly as
+      # locally. (cypress-io/github-action's own start/wait-on fails at once on the runner's Node 24.)
       - name: Run Cypress
-        uses: cypress-io/github-action@v6
-        with:
-          install: false
-          start: npm run dev:e2e
-          # 127.0.0.1, not localhost: on the runner localhost can resolve to ::1 while Vite listens on IPv4
-          wait-on: 'http://127.0.0.1:5174'
-          wait-on-timeout: 120
-          config: baseUrl=http://127.0.0.1:5174
+        run: npm run test:e2e
 
       - name: Keep screenshots of failures
         if: failure()
